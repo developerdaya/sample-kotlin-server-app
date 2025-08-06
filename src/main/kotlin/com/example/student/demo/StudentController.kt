@@ -23,4 +23,12 @@ class StudentController {
             Student(10, "Tanya Roy", "tanya.roy@example.com")
         )
     }
+
+    @GetMapping("/")
+    fun home(): String {
+        return "Server is working fine on Railway 🚀"
+    }
+
+
+
 }
