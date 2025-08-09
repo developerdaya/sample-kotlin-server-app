@@ -1,75 +1,51 @@
 package com.example.student.demo
 
 import org.springframework.web.bind.annotation.*
-import java.util.concurrent.atomic.AtomicLong
-
-data class Student(
-    val id: Long,
-    var name: String,
-    var email: String
-)
 
 @RestController
 @RequestMapping("/student")
-class StudentController {
+class StudentController private constructor(private val studentRepository: StudentRepository) {
 
-    // Auto-increment ID generator
-    private val idCounter = AtomicLong(1)
-
-    // In-memory student list
-    private val students = mutableListOf<Student>(
-        Student(idCounter.getAndIncrement(), "Aarav Sharma", "aarav.sharma@example.com"),
-        Student(idCounter.getAndIncrement(), "Isha Verma", "isha.verma@example.com")
-    )
-
-    // 🔹 CREATE - Add a new student
+    // CREATE
     @PostMapping
     fun createStudent(@RequestBody student: Student): Student {
-        val newStudent = student.copy(id = idCounter.getAndIncrement())
-        students.add(newStudent)
-        return newStudent
+        return studentRepository.save(student)
     }
 
-    // 🔹 READ - Get all students
+    // READ all
     @GetMapping
     fun getAllStudents(): List<Student> {
-        return students
+        return studentRepository.findAll()
     }
 
-    // 🔹 READ - Get student by ID
+    // READ one
     @GetMapping("/{id}")
     fun getStudentById(@PathVariable id: Long): Student? {
-        return students.find { it.id == id }
+        return studentRepository.findById(id).orElse(null)
     }
 
-    // 🔹 UPDATE - Update existing student
+    // UPDATE
     @PutMapping("/{id}")
-    fun updateStudent(
-        @PathVariable id: Long,
-        @RequestBody updatedStudent: Student
-    ): Student? {
-        val studentIndex = students.indexOfFirst { it.id == id }
-        if (studentIndex != -1) {
-            students[studentIndex] = students[studentIndex].copy(
-                name = updatedStudent.name,
-                email = updatedStudent.email
-            )
-            return students[studentIndex]
-        }
-        return null
+    fun updateStudent(@PathVariable id: Long, @RequestBody updatedStudent: Student): Student? {
+        val existing = studentRepository.findById(id).orElse(null) ?: return null
+        existing.name = updatedStudent.name
+        existing.email = updatedStudent.email
+        return studentRepository.save(existing)
     }
 
-    // 🔹 DELETE - Remove student
+    // DELETE
     @DeleteMapping("/{id}")
     fun deleteStudent(@PathVariable id: Long): String {
-        val removed = students.removeIf { it.id == id }
-        return if (removed) "Student with ID $id deleted successfully"
-        else "Student not found"
+        return if (studentRepository.existsById(id)) {
+            studentRepository.deleteById(id)
+            "Student with ID $id deleted successfully"
+        } else {
+            "Student not found"
+        }
     }
 
-    // Optional root message for Student API
     @GetMapping("/")
     fun studentHome(): String {
-        return "Student API is working fine 🎯"
+        return "🎯 Student API with MySQL is working fine"
     }
 }
